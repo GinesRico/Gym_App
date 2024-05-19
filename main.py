@@ -5,7 +5,8 @@ import os
 def main(page: ft.Page):
     page.title = "Ejercicios"
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
-    page.alignment = ft.CrossAxisAlignment.CENTER
+    page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
+
 
     # Ruta de la imagen
     image_base_path = "/Users/ginesrico/Desktop/gym_app/assets"
