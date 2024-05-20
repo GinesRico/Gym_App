@@ -72,6 +72,13 @@ def main(page: ft.Page):
             scroll=ft.ScrollMode.ALWAYS
         )
 
+        # Función para abrir el diálogo correspondiente al ejercicio
+        def open_dlg(instructions):
+            dlg.content = ft.Text(instructions)
+            page.dialog = dlg
+            dlg.open = True
+            page.update()
+
         for ejercicio in ejercicios:
             name, gifUrl, instructions = ejercicio
 
@@ -87,11 +94,11 @@ def main(page: ft.Page):
                     content=ft.Column(
                         [
                             ft.ListTile(
-                                title=ft.Text(name),
+                                title=ft.Text(name.upper()),
                                 subtitle=ft.Image(src=gifUrl),
                             ),
                             ft.Row(
-                                [ft.TextButton("Instrucciones", on_click=lambda e: open_dlg(instructions))],
+                                [ft.TextButton("Instrucciones", on_click=lambda e, inst=instructions: open_dlg(inst))],
                                 alignment=ft.MainAxisAlignment.END,
                             ),                            
                         ]
@@ -99,14 +106,7 @@ def main(page: ft.Page):
                     padding=10,
                 )
             )
-
-            # Función para abrir el diálogo correspondiente al ejercicio
-            def open_dlg(instructions):
-                dlg.content = ft.Text(instructions)
-                page.dialog = dlg
-                dlg.open = True
-                page.update()
-
+            
             ejercicio_card.controls.append(card_content)
 
         page.add(ejercicio_card)
