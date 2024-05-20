@@ -178,7 +178,7 @@ def main(page: ft.Page):
                 def open_dlg(instructions):
                     dlg = ft.AlertDialog(
                         title=ft.Text("Instrucciones"),
-                        content=ft.Text(instructions),
+                        content=ft.Text(instructions.capitalize()),
                         actions=[
                             ft.TextButton("Cerrar", on_click=lambda _: page.dialog.close())
                         ]
