@@ -120,8 +120,13 @@ def main(page: ft.Page):
                 home()
 
     def home():
-        page.add(ft.Text("Bienvenido!", expand=True))
-
+        page.add(
+            ft.Image(src=f"icon.png", height=400),
+            ft.Container(padding=20),
+            ft.Text("Bienvenido!"),
+            ft.Container(padding=20),
+            ft.Container(padding=20),
+    )
 
     def body_screen():
         
@@ -178,7 +183,12 @@ def main(page: ft.Page):
             ft.NavigationDestination(icon=ft.icons.ARROW_BACK, label="Atrás")
         ]
     )
-
-    page.add(ft.Text("Bienvenido!", expand=True))
+    page.add(
+    ft.Image(src=f"icon.png", height=400),
+    ft.Container(padding=20),
+    ft.Text("Bienvenido!"),
+    ft.Container(padding=20),
+    ft.Container(padding=20),
+)
 
 ft.app(target=main)

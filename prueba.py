@@ -1,78 +1,44 @@
 import flet as ft
-import sqlite3
-import os 
-
-
+from time import sleep
 
 def main(page: ft.Page):
-    gv = ft.GridView(expand=True, max_extent=150, child_aspect_ratio=1)
-    page.add(gv)
-    image_base_path = "/Users/ginesrico/Desktop/gym_app/assets"
+    page.title = "Timer App"
+    page.horizontal_alignment = "center"
+    page.vertical_alignment = "center"
+    page.theme_mode = "dark"
+    page.padding = 40
+    page.window_frameless = True
+    page.window_height = 510
+    page.window_width = 490
 
-    def body_part_click(e):
-        body_part = e.control.data
-        history.append("body_part")
-        page.clean()
-        conn = sqlite3.connect('datos_ejercicios.db')
-        cursor = conn.cursor()
-        cursor.execute("SELECT DISTINCT equipment FROM datos WHERE bodyPart=?", (body_part,))
-        equipments = cursor.fetchall()
-        conn.close()
+    seconds = ft.TextField(hint_text="seconds...", border_radius=30, width=120, text_align="center")
 
-        equipment_buttons = []
+    def start_timer(e):
+        button.visible = False
+        sec_value = int(eval(seconds.value))
+        while sec_value:
+            mins, secs = divmod(sec_value, 60)
+            time.value = "{:02d} min {:02d} sec".format(mins, secs)
+            sleep(1)
+            sec_value = sec_value - 1
+            page.update()
+        sleep(1)
+        time.value = "{:02d} min {:02d} sec".format(mins, sec_value)
+        button.visible = True
+        page.update()
 
-        for equip in equipments:
-            image_path = os.path.join(image_base_path, f"{body_part[0].lower()}.png")
-            button = ft.ElevatedButton(
-                content=ft.Container(
-                    content=ft.Column(
-                        [
-                            ft.Image(src=image_path, fit=ft.ImageFit.COVER, width=100, height=100),
-                            ft.Text(equip[0].upper())
-                        ],
-                        alignment=ft.alignment.center
-                    ),
-                ),
-                on_click=lambda e: equipment_click(e, body_part),
-                data=equip[0],
-                style=ft.ButtonStyle(
-                    shape=ft.RoundedRectangleBorder(radius=5)
-                )
-            )
-            equipment_buttons.append(button)
+    time = ft.Text(style="displayLarge", color="white")
 
-        page.add(ft.Row(controls=equipment_buttons, scroll="always", wrap=True, spacing=10, run_spacing=10, alignment=ft.MainAxisAlignment.SPACE_BETWEEN, vertical_alignment=ft.CrossAxisAlignment.CENTER))
+    button = ft.ElevatedButton("set timer", on_click=start_timer, color="green")
 
+    page.add(
+        ft.Image(src=f"logo.png", height=90),
+        ft.Container(padding=20),
+        ft.Row([seconds, button], alignment="center"),
+        ft.Container(padding=20),
+        time,
+        ft.Container(padding=20),
+        ft.Text("Designed and Developed by: kmranrg (Instagram)", color="yellow")
+    )
 
-
-
-
-    conn = sqlite3.connect('datos_ejercicios.db')
-    cursor = conn.cursor()
-    cursor.execute("SELECT DISTINCT bodyPart FROM datos")
-    body_parts = cursor.fetchall()
-    conn.close()
-
-    body_part_buttons = []
-    for body_part in body_parts:
-        image_path = os.path.join(image_base_path, f"{body_part[0].lower()}.png")
-        button = ft.ElevatedButton(
-            content=ft.Container(
-                content=ft.Column(
-                    [
-                        ft.Image(src=image_path, fit=ft.ImageFit.COVER, width=100, height=100),
-                        ft.Text(body_part[0].upper())
-                    ],
-                    alignment=ft.alignment.center
-                ),
-            ),
-            on_click=(body_part_click),
-            data=body_part[0],
-            style=ft.ButtonStyle(
-                shape=ft.RoundedRectangleBorder(radius=5)
-            )
-        )
-        gv.controls.append(button)
-    page.update()
-
-ft.app(target=main)
+ft.app(target=main, assets_dir="assets")
