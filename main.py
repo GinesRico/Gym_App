@@ -9,6 +9,7 @@ def main(page: ft.Page):
 
     # Ruta de la imagen
     image_base_path = "/Users/ginesrico/Desktop/gym_app/assets"
+    
 
     # Conectar a la base de datos y crear la tabla de favoritos si no existe
     conn = sqlite3.connect('datos_ejercicios.db')
