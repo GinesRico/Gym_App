@@ -311,4 +311,5 @@ def main(page: ft.Page):
         ft.Container(padding=20),
     )
 
-ft.app(target=main, view=ft.AppView.WEB_BROWSER)
+ft.app(target=main, assets_dir="assets", view=ft.WEB_BROWSER)
+
