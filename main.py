@@ -97,7 +97,7 @@ def main(page: ft.Page):
                 username = username_field.value.strip()
                 password = password_field.value.strip()
 
-                if not username or not password:
+                if not username and password:
                     page.snack_bar = ft.SnackBar(content=ft.Text("El usuario y la contraseña no pueden estar vacíos"))
                     page.snack_bar.open = True
                     page.update()
@@ -140,6 +140,7 @@ def main(page: ft.Page):
             destinations=[
                 ft.NavigationDestination(icon=ft.icons.EXPLORE, label="Inicio"),
                 ft.NavigationDestination(icon=ft.icons.SPORTS_GYMNASTICS_ROUNDED, label="Ejercicios"),
+                ft.NavigationDestination(icon=ft.icons.STAR, label="Favoritos"),
                 ft.NavigationDestination(icon=ft.icons.ARROW_BACK, label="Atrás")
             ]
         )
@@ -272,8 +273,36 @@ def main(page: ft.Page):
             dlg.open = False
             page.update()
 
+        def mark_favorite(e, ejercicio_id):
+            conn = sqlite3.connect(bd_path)
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM favoritos WHERE user_id=? AND ejercicio_id=?", (current_user_id, ejercicio_id))
+            favorito = cursor.fetchone()
+            if favorito:
+                cursor.execute("DELETE FROM favoritos WHERE user_id=? AND ejercicio_id=?", (current_user_id, ejercicio_id))
+                conn.commit()
+                message = f"Ejercicio eliminado de favoritos"
+            else:
+                cursor.execute("INSERT INTO favoritos (user_id, ejercicio_id) VALUES (?, ?)", (current_user_id, ejercicio_id))
+                conn.commit()
+                message = f"Ejercicio añadido a favoritos"
+            conn.close()
+
+            page.snack_bar = ft.SnackBar(content=ft.Text(message))
+            page.snack_bar.open = True
+            page.update()
+            load_exercises(body_part, equipment_filter, target_filter)
+
         for ejercicio in ejercicios:
             ejercicio_id, name, gifUrl, instructions, secondaryMuscles = ejercicio
+
+            conn = sqlite3.connect(bd_path)
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM favoritos WHERE user_id=? AND ejercicio_id=?", (current_user_id, ejercicio_id))
+            favorito = cursor.fetchone()
+            conn.close()
+
+            favorite_icon = ft.icons.STAR if favorito else ft.icons.STAR_OUTLINE_OUTLINED
 
             card_content = ft.Card(
                 content=ft.Container(
@@ -287,6 +316,12 @@ def main(page: ft.Page):
                                 [
                                     ft.TextButton("Instrucciones", on_click=lambda e, inst=instructions: open_dlg(inst)),
                                     ft.TextButton("Músculos Auxiliares", on_click=lambda e, secMuscles=secondaryMuscles: open_dlg(secMuscles, title="Músculos Auxiliares")),
+                                    ft.IconButton(
+                                        icon=favorite_icon,
+                                        icon_size=20,
+                                        tooltip="Favorito",
+                                        on_click=lambda e, ejercicio_id=ejercicio_id: mark_favorite(e, ejercicio_id)
+                                    )
                                 ],
                                 alignment=ft.MainAxisAlignment.END,
                             ),
@@ -301,6 +336,83 @@ def main(page: ft.Page):
         page.add(ejercicio_card)
         page.update()
 
+    def favorites_screen(e=None):
+        page.clean()
+
+        conn = sqlite3.connect(bd_path)
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT ejercicios.name, ejercicios.gifUrl, ejercicios.instructions
+            FROM favoritos
+            JOIN ejercicios ON favoritos.ejercicio_id = ejercicios.id
+            WHERE favoritos.user_id = ?
+        """, (current_user_id,))
+        favoritos = cursor.fetchall()
+        conn.close()
+
+        favorites_list = ft.Column(spacing=10, expand=True, scroll=ft.ScrollMode.ALWAYS)
+
+        def open_dlg(instructions):
+            dlg = ft.AlertDialog(
+                title=ft.Text("Instrucciones"),
+                content=ft.Text(instructions),
+                actions=[ft.TextButton("Cerrar", on_click=lambda _: close_dlg(dlg))]
+            )
+            page.dialog = dlg
+            dlg.open = True
+            page.update()
+
+        def close_dlg(dlg):
+            dlg.open = False
+            page.update()
+
+        def remove_favorite(e, name):
+            conn = sqlite3.connect(bd_path)
+            cursor = conn.cursor()
+            cursor.execute("SELECT id FROM ejercicios WHERE name=?", (name,))
+            ejercicio_id = cursor.fetchone()[0]
+            cursor.execute("DELETE FROM favoritos WHERE user_id=? AND ejercicio_id=?", (current_user_id, ejercicio_id))
+            conn.commit()
+            conn.close()
+
+            page.snack_bar = ft.SnackBar(content=ft.Text(f"{name} eliminado de favoritos"))
+            page.snack_bar.open = True
+            page.update()
+            favorites_screen()
+
+        for fav in favoritos:
+            name, gifUrl, instructions = fav
+
+            card_content = ft.Card(
+                content=ft.Container(
+                    content=ft.Column(
+                        [
+                            ft.ListTile(
+                                title=ft.Text(name.upper()),
+                                subtitle=ft.Image(src=gifUrl),
+                            ),
+                            ft.Row(
+                                [
+                                    ft.TextButton("Instrucciones", on_click=lambda e, inst=instructions: open_dlg(inst)),
+                                    ft.IconButton(
+                                        icon=ft.icons.STAR,
+                                        icon_size=20,
+                                        tooltip="Eliminar de favoritos",
+                                        on_click=lambda e, name=name: remove_favorite(e, name)
+                                    )
+                                ],
+                                alignment=ft.MainAxisAlignment.END,
+                            ),
+                        ]
+                    ),
+                    padding=10,
+                )
+            )
+            favorites_list.controls.append(card_content)
+
+        page.add(favorites_list)
+        page.update()
+
     def go_back(e):
         if history:
             last_action = history.pop()
@@ -311,6 +423,10 @@ def main(page: ft.Page):
         selected_index = e.control.selected_index
         if selected_index == 0:
             body_screen()
+        elif selected_index == 1:
+            body_screen()
+        elif selected_index == 2:
+            favorites_screen()
         elif selected_index == 3:
             go_back(None)
 
