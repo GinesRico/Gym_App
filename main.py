@@ -65,10 +65,14 @@ def main(page: ft.Page):
             dlg = ft.AlertDialog(
                 title=ft.Text("Instrucciones"),
                 content=ft.Text(instructions),
-                actions=[ft.TextButton("Cerrar", on_click=lambda _: page.dialog.close())]
+                actions=[ft.TextButton("Cerrar", on_click=lambda _: close_dlg(dlg))]
             )
             page.dialog = dlg
             dlg.open = True
+            page.update()
+
+        def close_dlg(dlg):
+            dlg.open = False
             page.update()
 
         def mark_favorite(name):
@@ -142,10 +146,14 @@ def main(page: ft.Page):
                     dlg = ft.AlertDialog(
                         title=ft.Text("Instrucciones"),
                         content=ft.Text(instructions.capitalize()),
-                        actions=[ft.TextButton("Cerrar", on_click=lambda _: page.dialog.close())]
+                        actions=[ft.TextButton("Cerrar", on_click=lambda _: close_dlg(dlg))]
                     )
                     page.dialog = dlg
                     dlg.open = True
+                    page.update()
+
+                def close_dlg(dlg):
+                    dlg.open = False
                     page.update()
 
                 def remove_favorite(name):
