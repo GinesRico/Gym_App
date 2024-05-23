@@ -80,7 +80,7 @@ def main(page: ft.Page):
                 current_user_id = user[0]
                 current_username = username
                 show_navigation_bar()
-                body_screen()
+                show_home()
                 return
             
             page.snack_bar.open = True
@@ -97,7 +97,7 @@ def main(page: ft.Page):
                 username = username_field.value.strip()
                 password = password_field.value.strip()
 
-                if not username and password:
+                if not username or not password:
                     page.snack_bar = ft.SnackBar(content=ft.Text("El usuario y la contraseña no pueden estar vacíos"))
                     page.snack_bar.open = True
                     page.update()
@@ -143,6 +143,25 @@ def main(page: ft.Page):
                 ft.NavigationDestination(icon=ft.icons.STAR, label="Favoritos"),
                 ft.NavigationDestination(icon=ft.icons.ARROW_BACK, label="Atrás")
             ]
+        )
+        page.update()
+
+    def show_home(e=None):
+        def logout(e):
+            global current_user_id, current_username
+            current_user_id = None
+            current_username = None
+            page.navigation_bar = None
+            show_login()
+
+        page.clean()
+        logout_button = ft.ElevatedButton(text="Cerrar sesión", on_click=logout)
+        page.add(
+            ft.Image(src="icon.png", height=400),
+            ft.Container(padding=20),
+            ft.Text(f"Bienvenido, {current_username.capitalize()}!"),
+            ft.Container(padding=20),
+            logout_button
         )
         page.update()
 
@@ -192,7 +211,12 @@ def main(page: ft.Page):
             label="Filter by Target",
         )
 
-        page.add(ft.Row([filter_dropdown_equipment, filter_dropdown_target]))
+        expandable_filters = ft.Container(
+            content=ft.Column([filter_dropdown_equipment, filter_dropdown_target]),
+            expand=False,
+        )
+
+        page.add(expandable_filters)
 
         conn = sqlite3.connect(bd_path)
         cursor = conn.cursor()
@@ -212,7 +236,7 @@ def main(page: ft.Page):
 
     def load_exercises(body_part, equipment_filter=None, target_filter=None):
         page.clean()
-        
+
         filter_dropdown_equipment = ft.Dropdown(
             options=[],
             on_change=lambda e: load_exercises(body_part, e.control.value, target_filter),
@@ -241,7 +265,12 @@ def main(page: ft.Page):
         filter_dropdown_target.options.insert(0, ft.dropdown.Option("Todos"))
         filter_dropdown_target.value = target_filter if target_filter else "Todos"
 
-        page.add(ft.Row([filter_dropdown_equipment, filter_dropdown_target]))
+        expandable_filters = ft.Container(
+            content=ft.Column([filter_dropdown_equipment, filter_dropdown_target]),
+            expand=False,
+        )
+
+        ejercicio_card = ft.Column(spacing=10, expand=True, scroll=ft.ScrollMode.ALWAYS)
 
         conn = sqlite3.connect(bd_path)
         cursor = conn.cursor()
@@ -256,8 +285,6 @@ def main(page: ft.Page):
         cursor.execute(query, params)
         ejercicios = cursor.fetchall()
         conn.close()
-
-        ejercicio_card = ft.Column(spacing=10, expand=True, scroll=ft.ScrollMode.ALWAYS)
 
         def open_dlg(content, title="Instrucciones"):
             dlg = ft.AlertDialog(
@@ -333,6 +360,7 @@ def main(page: ft.Page):
 
             ejercicio_card.controls.append(card_content)
 
+        page.add(expandable_filters)
         page.add(ejercicio_card)
         page.update()
 
@@ -422,7 +450,7 @@ def main(page: ft.Page):
     def nav_change(e):
         selected_index = e.control.selected_index
         if selected_index == 0:
-            body_screen()
+            show_home()
         elif selected_index == 1:
             body_screen()
         elif selected_index == 2:
