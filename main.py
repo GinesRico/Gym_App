@@ -5,6 +5,7 @@ from login_screen import show_login
 from home_screen import show_home
 from exercises_screen import body_screen, show_exercises
 from favorites_screen import favorites_screen
+from tmb_get_screen import show_tmb_get_screen  # Importar la nueva pantalla
 
 initialize_database()
 
@@ -29,6 +30,7 @@ def main(page: ft.Page):
                 ft.NavigationDestination(icon=ft.icons.EXPLORE, label="Inicio"),
                 ft.NavigationDestination(icon=ft.icons.SPORTS_GYMNASTICS_ROUNDED, label="Ejercicios"),
                 ft.NavigationDestination(icon=ft.icons.STAR, label="Favoritos"),
+                ft.NavigationDestination(icon=ft.icons.CALCULATE, label="TMB & GET"),  # Añadir nuevo botón
                 ft.NavigationDestination(icon=ft.icons.ARROW_BACK, label="Atrás")
             ]
         )
@@ -51,6 +53,8 @@ def main(page: ft.Page):
         elif selected_index == 2:
             favorites_screen(page, current_user_id, history)
         elif selected_index == 3:
+            show_tmb_get_screen(page)  # Mostrar la nueva pantalla
+        elif selected_index == 4:
             go_back(None)
 
     show_login(page, history, show_navigation_bar, show_home, set_current_user)
