@@ -1,14 +1,152 @@
 import flet as ft
+import sqlite3
 import os
-from config import image_base_path
-from database import get_connection
+from config import image_base_path, bd_path
 
-def body_screen(page, user_id, username, history):
+def show_exercises(page, body_part, history, current_user_id, current_username):
+    def load_exercises(e, equipment_filter=None, target_filter=None):
+        page.clean()
+
+        conn = sqlite3.connect(bd_path)
+        cursor = conn.cursor()
+
+        query = "SELECT id, name, gifUrl, instructions FROM ejercicios WHERE bodyPart=?"
+        params = [body_part]
+
+        if equipment_filter:
+            query += " AND equipment=?"
+            params.append(equipment_filter)
+        if target_filter:
+            query += " AND target=?"
+            params.append(target_filter)
+
+        cursor.execute(query, params)
+        ejercicios = cursor.fetchall()
+        conn.close()
+
+        ejercicio_card = ft.Column(spacing=10, expand=True, scroll=ft.ScrollMode.ALWAYS)
+
+        def open_dlg(instructions):
+            dlg = ft.AlertDialog(
+                title=ft.Text("Instrucciones"),
+                content=ft.Text(instructions),
+                actions=[ft.TextButton("Cerrar", on_click=lambda _: close_dlg(dlg))]
+            )
+            page.dialog = dlg
+            dlg.open = True
+            page.update()
+
+        def close_dlg(dlg):
+            dlg.open = False
+            page.update()
+
+        def add_to_training(e, ejercicio_id):
+            def save_to_existing_training(e):
+                selected_training = training_dropdown.value
+                if selected_training:
+                    conn = sqlite3.connect(bd_path)
+                    cursor = conn.cursor()
+                    cursor.execute("INSERT INTO entrenamiento_ejercicios (entrenamiento_id, ejercicio_id) VALUES (?, ?)", (selected_training, ejercicio_id))
+                    conn.commit()
+                    conn.close()
+                    page.snack_bar = ft.SnackBar(content=ft.Text(f"Ejercicio añadido al entrenamiento {selected_training}"))
+                    page.snack_bar.open = True
+                    page.dialog.open = False
+                    page.update()
+
+            def create_new_training(e):
+                training_name = training_name_field.value
+                if training_name:
+                    conn = sqlite3.connect(bd_path)
+                    cursor = conn.cursor()
+                    cursor.execute("INSERT INTO entrenamientos (user_id, nombre) VALUES (?, ?)", (current_user_id, training_name))
+                    conn.commit()
+                    training_id = cursor.lastrowid
+                    cursor.execute("INSERT INTO entrenamiento_ejercicios (entrenamiento_id, ejercicio_id) VALUES (?, ?)", (training_id, ejercicio_id))
+                    conn.commit()
+                    conn.close()
+                    page.snack_bar = ft.SnackBar(content=ft.Text(f"Nuevo entrenamiento {training_name} creado y ejercicio añadido"))
+                    page.snack_bar.open = True
+                    page.dialog.open = False
+                    page.update()
+
+            training_name_field = ft.TextField(label="Nuevo Entrenamiento")
+            training_dropdown = ft.Dropdown(
+                options=[],
+                label="Entrenamiento Existente",
+                width=300
+            )
+
+            conn = sqlite3.connect(bd_path)
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, nombre FROM entrenamientos WHERE user_id=?", (current_user_id,))
+            entrenamientos = cursor.fetchall()
+            conn.close()
+
+            for entrenamiento in entrenamientos:
+                training_dropdown.options.append(ft.dropdown.Option(entrenamiento[0], entrenamiento[1]))
+
+            page.dialog = ft.AlertDialog(
+                title=ft.Text("Añadir a Entrenamiento"),
+                content=ft.Column(
+                    [
+                        ft.Text("Selecciona un entrenamiento existente o crea uno nuevo"),
+                        ft.Row(
+                            [
+                                training_dropdown,
+                                ft.ElevatedButton(text="Añadir", on_click=save_to_existing_training)
+                            ]
+                        ),
+                        training_name_field,
+                        ft.ElevatedButton(text="Crear y Añadir", on_click=create_new_training)
+                    ],
+                    spacing=10
+                )
+            )
+            page.dialog.open = True
+            page.update()
+
+        for ejercicio in ejercicios:
+            ejercicio_id, name, gifUrl, instructions = ejercicio
+
+            card_content = ft.Card(
+                content=ft.Container(
+                    content=ft.Column(
+                        [
+                            ft.ListTile(
+                                title=ft.Text(name.upper()),
+                                subtitle=ft.Image(src=gifUrl),
+                            ),
+                            ft.Row(
+                                [
+                                    ft.TextButton("Instrucciones", on_click=lambda e, inst=instructions: open_dlg(inst)),
+                                    ft.IconButton(
+                                        icon=ft.icons.ADD,
+                                        icon_size=20,
+                                        tooltip="Añadir a entrenamiento",
+                                        on_click=lambda e, ejercicio_id=ejercicio_id: add_to_training(e, ejercicio_id)
+                                    )
+                                ],
+                                alignment=ft.MainAxisAlignment.END,
+                            ),
+                        ]
+                    ),
+                    padding=10,
+                )
+            )
+
+            ejercicio_card.controls.append(card_content)
+
+        page.add(ejercicio_card)
+
+    load_exercises(None)
+
+def body_screen(page, current_user_id, current_username, history):
     page.clean()
     bp = ft.GridView(expand=True, max_extent=150, child_aspect_ratio=1)
     page.add(bp)
 
-    conn = get_connection()
+    conn = sqlite3.connect(bd_path)
     cursor = conn.cursor()
     cursor.execute("SELECT DISTINCT bodyPart FROM ejercicios")
     body_parts = cursor.fetchall()
@@ -27,177 +165,8 @@ def body_screen(page, user_id, username, history):
                 ),
                 alignment=ft.alignment.center,
             ),
-            on_click=lambda e, body_part=body_part: show_exercises(page, body_part[0], history, user_id),
+            on_click=lambda e, body_part=body_part: show_exercises(page, body_part[0], history, current_user_id, current_username),
             style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=5))
         )
         bp.controls.append(button)
-    page.update()
-
-def show_exercises(page, body_part, history, user_id):
-    page.clean()
-    history.append("body_screen")
-
-    filter_dropdown_equipment = ft.Dropdown(
-        options=[],
-        on_change=lambda e: load_exercises(page, body_part, filter_dropdown_equipment.value, filter_dropdown_target.value, history, user_id),
-        label="Filter by Equipment",
-    )
-
-    filter_dropdown_target = ft.Dropdown(
-        options=[],
-        on_change=lambda e: load_exercises(page, body_part, filter_dropdown_equipment.value, filter_dropdown_target.value, history, user_id),
-        label="Filter by Target",
-    )
-
-    expandable_filters = ft.Container(
-        content=ft.Column([filter_dropdown_equipment, filter_dropdown_target]),
-        expand=False,
-    )
-
-    page.add(expandable_filters)
-
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT DISTINCT equipment FROM ejercicios WHERE bodyPart=?", (body_part,))
-    equipments = cursor.fetchall()
-    cursor.execute("SELECT DISTINCT target FROM ejercicios WHERE bodyPart=?", (body_part,))
-    targets = cursor.fetchall()
-    conn.close()
-
-    filter_dropdown_equipment.options = [ft.dropdown.Option(equip[0]) for equip in equipments]
-    filter_dropdown_equipment.options.insert(0, ft.dropdown.Option("Todos"))
-
-    filter_dropdown_target.options = [ft.dropdown.Option(target[0]) for target in targets]
-    filter_dropdown_target.options.insert(0, ft.dropdown.Option("Todos"))
-
-    load_exercises(page, body_part, history=history, user_id=user_id)
-
-def load_exercises(page, body_part, equipment_filter=None, target_filter=None, history=None, user_id=None):
-    page.clean()
-
-    filter_dropdown_equipment = ft.Dropdown(
-        options=[],
-        on_change=lambda e: load_exercises(page, body_part, e.control.value, target_filter, history, user_id),
-        label="Filter by Equipment",
-    )
-
-    filter_dropdown_target = ft.Dropdown(
-        options=[],
-        on_change=lambda e: load_exercises(page, body_part, equipment_filter, e.control.value, history, user_id),
-        label="Filter by Target",
-    )
-
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT DISTINCT equipment FROM ejercicios WHERE bodyPart=?", (body_part,))
-    equipments = cursor.fetchall()
-    cursor.execute("SELECT DISTINCT target FROM ejercicios WHERE bodyPart=?", (body_part,))
-    targets = cursor.fetchall()
-    conn.close()
-
-    filter_dropdown_equipment.options = [ft.dropdown.Option(equip[0]) for equip in equipments]
-    filter_dropdown_equipment.options.insert(0, ft.dropdown.Option("Todos"))
-    filter_dropdown_equipment.value = equipment_filter if equipment_filter else "Todos"
-
-    filter_dropdown_target.options = [ft.dropdown.Option(target[0]) for target in targets]
-    filter_dropdown_target.options.insert(0, ft.dropdown.Option("Todos"))
-    filter_dropdown_target.value = target_filter if target_filter else "Todos"
-
-    expandable_filters = ft.Container(
-        content=ft.Column([filter_dropdown_equipment, filter_dropdown_target]),
-        expand=False,
-    )
-
-    ejercicio_card = ft.Column(spacing=10, expand=True, scroll=ft.ScrollMode.ALWAYS)
-
-    conn = get_connection()
-    cursor = conn.cursor()
-    query = "SELECT id, name, gifUrl, instructions, secondaryMuscles FROM ejercicios WHERE bodyPart=?"
-    params = [body_part]
-    if equipment_filter and equipment_filter != "Todos":
-        query += " AND equipment=?"
-        params.append(equipment_filter)
-    if target_filter and target_filter != "Todos":
-        query += " AND target=?"
-        params.append(target_filter)
-    cursor.execute(query, params)
-    ejercicios = cursor.fetchall()
-    conn.close()
-
-    def open_dlg(content, title="Instrucciones"):
-        dlg = ft.AlertDialog(
-            title=ft.Text(title),
-            content=ft.Text(content),
-            actions=[ft.TextButton("Cerrar", on_click=lambda _: close_dlg(dlg))]
-        )
-        page.dialog = dlg
-        dlg.open = True
-        page.update()
-
-    def close_dlg(dlg):
-        dlg.open = False
-        page.update()
-
-    def mark_favorite(e, ejercicio_id):
-        conn = get_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM favoritos WHERE user_id=? AND ejercicio_id=?", (user_id, ejercicio_id))
-        favorito = cursor.fetchone()
-        if favorito:
-            cursor.execute("DELETE FROM favoritos WHERE user_id=? AND ejercicio_id=?", (user_id, ejercicio_id))
-            conn.commit()
-            message = f"Ejercicio eliminado de favoritos"
-        else:
-            cursor.execute("INSERT INTO favoritos (user_id, ejercicio_id) VALUES (?, ?)", (user_id, ejercicio_id))
-            conn.commit()
-            message = f"Ejercicio añadido a favoritos"
-        conn.close()
-
-        page.snack_bar = ft.SnackBar(content=ft.Text(message))
-        page.snack_bar.open = True
-        page.update()
-        load_exercises(page, body_part, equipment_filter, target_filter, history, user_id)
-
-    for ejercicio in ejercicios:
-        ejercicio_id, name, gifUrl, instructions, secondaryMuscles = ejercicio
-
-        conn = get_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM favoritos WHERE user_id=? AND ejercicio_id=?", (user_id, ejercicio_id))
-        favorito = cursor.fetchone()
-        conn.close()
-
-        favorite_icon = ft.icons.STAR if favorito else ft.icons.STAR_OUTLINE_OUTLINED
-
-        card_content = ft.Card(
-            content=ft.Container(
-                content=ft.Column(
-                    [
-                        ft.ListTile(
-                            title=ft.Text(name.upper()),
-                            subtitle=ft.Image(src=gifUrl),
-                        ),
-                        ft.Row(
-                            [
-                                ft.TextButton("Instrucciones", on_click=lambda e, inst=instructions: open_dlg(inst)),
-                                ft.TextButton("Músculos Auxiliares", on_click=lambda e, secMuscles=secondaryMuscles: open_dlg(secMuscles, title="Músculos Auxiliares")),
-                                ft.IconButton(
-                                    icon=favorite_icon,
-                                    icon_size=20,
-                                    tooltip="Favorito",
-                                    on_click=lambda e, ejercicio_id=ejercicio_id: mark_favorite(e, ejercicio_id)
-                                )
-                            ],
-                            alignment=ft.MainAxisAlignment.END,
-                        ),
-                    ]
-                ),
-                padding=10,
-            )
-        )
-
-        ejercicio_card.controls.append(card_content)
-
-    page.add(expandable_filters)
-    page.add(ejercicio_card)
     page.update()

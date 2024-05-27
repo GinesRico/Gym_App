@@ -14,20 +14,27 @@ def initialize_database():
     )
     """)
 
-    # Verificar si la tabla de favoritos tiene las columnas correctas
-    cursor.execute("PRAGMA table_info(favoritos)")
-    columns = [info[1] for info in cursor.fetchall()]
-    if "user_id" not in columns or "ejercicio_id" not in columns:
-        cursor.execute("DROP TABLE IF EXISTS favoritos")
-        cursor.execute("""
-        CREATE TABLE favoritos (
-            id INTEGER PRIMARY KEY AUTOINCREMENT, 
-            user_id INTEGER, 
-            ejercicio_id INTEGER, 
-            FOREIGN KEY (user_id) REFERENCES usuarios(id), 
-            FOREIGN KEY (ejercicio_id) REFERENCES ejercicios(id)
-        )
-        """)
+    # Crear tabla de entrenamientos si no existe
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS entrenamientos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        nombre TEXT,
+        FOREIGN KEY (user_id) REFERENCES usuarios(id)
+    )
+    """)
+
+    # Crear tabla de relacion entre entrenamientos y ejercicios
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS entrenamiento_ejercicios (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        entrenamiento_id INTEGER,
+        ejercicio_id INTEGER,
+        FOREIGN KEY (entrenamiento_id) REFERENCES entrenamientos(id),
+        FOREIGN KEY (ejercicio_id) REFERENCES ejercicios(id)
+    )
+    """)
+
     conn.close()
 
 def get_connection():

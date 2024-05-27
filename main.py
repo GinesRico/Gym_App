@@ -4,7 +4,7 @@ from database import initialize_database, get_connection
 from login_screen import show_login
 from home_screen import show_home
 from exercises_screen import body_screen, show_exercises
-from favorites_screen import favorites_screen
+from favorites_screen import show_trainings  # Actualizar el nombre de la función para entrenamientos
 from tmb_get_screen import show_tmb_get_screen  # Importar la nueva pantalla
 
 initialize_database()
@@ -29,7 +29,7 @@ def main(page: ft.Page):
             destinations=[
                 ft.NavigationDestination(icon=ft.icons.EXPLORE, label="Inicio"),
                 ft.NavigationDestination(icon=ft.icons.SPORTS_GYMNASTICS_ROUNDED, label="Ejercicios"),
-                ft.NavigationDestination(icon=ft.icons.STAR, label="Favoritos"),
+                ft.NavigationDestination(icon=ft.icons.STAR, label="Entrenamientos"),  # Actualizar el nombre del botón
                 ft.NavigationDestination(icon=ft.icons.CALCULATE, label="TMB & GET"),  # Añadir nuevo botón
                 ft.NavigationDestination(icon=ft.icons.ARROW_BACK, label="Atrás")
             ]
@@ -51,7 +51,7 @@ def main(page: ft.Page):
         elif selected_index == 1:
             body_screen(page, current_user_id, current_username, history)
         elif selected_index == 2:
-            favorites_screen(page, current_user_id, history)
+            show_trainings(page, current_user_id, history)
         elif selected_index == 3:
             show_tmb_get_screen(page)  # Mostrar la nueva pantalla
         elif selected_index == 4:
