@@ -74,7 +74,7 @@ def show_exercises(page, body_part, history, current_user_id, current_username):
             training_dropdown = ft.Dropdown(
                 options=[],
                 label="Entrenamiento Existente",
-                width=300
+                width=100
             )
 
             conn = sqlite3.connect(bd_path)

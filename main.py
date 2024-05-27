@@ -4,7 +4,7 @@ from database import initialize_database, get_connection
 from login_screen import show_login
 from home_screen import show_home
 from exercises_screen import body_screen, show_exercises
-from favorites_screen import show_trainings  # Actualizar el nombre de la función para entrenamientos
+from trainings_screen import show_trainings  # Actualizar el nombre de la función para entrenamientos
 from tmb_get_screen import show_tmb_get_screen  # Importar la nueva pantalla
 
 initialize_database()
@@ -39,21 +39,22 @@ def main(page: ft.Page):
     def go_back(e):
         if history:
             last_action = history.pop()
-            if last_action == "body_screen":
-                body_screen(page, current_user_id, current_username, history)
-            elif last_action == "home":
-                show_home(page, current_username, history, show_navigation_bar, set_current_user)
+            last_action()
 
     def nav_change(e):
         selected_index = e.control.selected_index
         if selected_index == 0:
+            history.append(lambda: show_home(page, current_username, history, show_navigation_bar, set_current_user))
             show_home(page, current_username, history, show_navigation_bar, set_current_user)
         elif selected_index == 1:
+            history.append(lambda: body_screen(page, current_user_id, current_username, history))
             body_screen(page, current_user_id, current_username, history)
         elif selected_index == 2:
+            history.append(lambda: show_trainings(page, current_user_id, history))
             show_trainings(page, current_user_id, history)
         elif selected_index == 3:
-            show_tmb_get_screen(page)  # Mostrar la nueva pantalla
+            history.append(lambda: show_tmb_get_screen(page))
+            show_tmb_get_screen(page)
         elif selected_index == 4:
             go_back(None)
 
