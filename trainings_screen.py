@@ -5,7 +5,6 @@ from config import bd_path
 def show_trainings(page, current_user_id, history):
     page.clean()
     page.appbar = None  # Asegúrate de que no haya un AppBar residual
-    
 
     conn = sqlite3.connect(bd_path)
     cursor = conn.cursor()
@@ -133,7 +132,7 @@ def show_trainings(page, current_user_id, history):
     page.add(training_list)
     page.update()
 
-def back_to_trainings():
+def back_to_trainings(page, current_user_id, history):
     show_trainings(page, current_user_id, history)
     page.appbar = None
     page.update()

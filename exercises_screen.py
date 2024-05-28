@@ -10,7 +10,7 @@ def show_exercises(page, body_part, history, current_user_id, current_username):
         conn = sqlite3.connect(bd_path)
         cursor = conn.cursor()
 
-        query = "SELECT id, name, gifUrl, instructions FROM ejercicios WHERE bodyPart=?"
+        query = "SELECT id, name, gifUrl, instructions, secundaryMuscles FROM ejercicios WHERE bodyPart=?"
         params = [body_part]
 
         if equipment_filter:
@@ -38,6 +38,16 @@ def show_exercises(page, body_part, history, current_user_id, current_username):
 
         def close_dlg(dlg):
             dlg.open = False
+            page.update()
+
+        def open_muscles_dlg(secundaryMuscles):
+            dlg = ft.AlertDialog(
+                title=ft.Text("Músculos Auxiliares"),
+                content=ft.Text(secundaryMuscles),
+                actions=[ft.TextButton("Cerrar", on_click=lambda _: close_dlg(dlg))]
+            )
+            page.dialog = dlg
+            dlg.open = True
             page.update()
 
         def add_to_training(e, ejercicio_id):
@@ -70,11 +80,11 @@ def show_exercises(page, body_part, history, current_user_id, current_username):
                     page.dialog.open = False
                     page.update()
 
-            training_name_field = ft.TextField(label="Nuevo Entrenamiento")
+            training_name_field = ft.TextField(label="Nuevo", width= 150)
             training_dropdown = ft.Dropdown(
                 options=[],
-                label="Entrenamiento Existente",
-                width=300
+                label="Existente",
+                width=150
             )
 
             conn = sqlite3.connect(bd_path)
@@ -94,11 +104,15 @@ def show_exercises(page, body_part, history, current_user_id, current_username):
                         ft.Row(
                             [
                                 training_dropdown,
-                                ft.ElevatedButton(text="Añadir", on_click=save_to_existing_training)
+                                ft.IconButton(icon=ft.icons.ADD, tooltip="Añadir",on_click=save_to_existing_training)
                             ]
                         ),
-                        training_name_field,
-                        ft.ElevatedButton(text="Crear y Añadir", on_click=create_new_training)
+                        ft.Row(
+                            [
+                                training_name_field,
+                                ft.IconButton(icon=ft.icons.ADD, tooltip="Crear y Añadir",on_click=create_new_training)
+                            ]
+                        )                                                    
                     ],
                     spacing=10
                 )
@@ -107,7 +121,7 @@ def show_exercises(page, body_part, history, current_user_id, current_username):
             page.update()
 
         for ejercicio in ejercicios:
-            ejercicio_id, name, gifUrl, instructions = ejercicio
+            ejercicio_id, name, gifUrl, instructions, secundaryMuscles = ejercicio
 
             card_content = ft.Card(
                 content=ft.Container(
@@ -120,6 +134,7 @@ def show_exercises(page, body_part, history, current_user_id, current_username):
                             ft.Row(
                                 [
                                     ft.IconButton(icon=ft.icons.INFO, tooltip="Instrucciones", on_click=lambda e, inst=instructions: open_dlg(inst)),
+                                    ft.IconButton(icon=ft.icons.FITNESS_CENTER, tooltip="Músculos Auxiliares", on_click=lambda e, muscles=secundaryMuscles: open_muscles_dlg(muscles)),
                                     ft.IconButton(icon=ft.icons.ADD, tooltip="Añadir a entrenamiento", on_click=lambda e, ejercicio_id=ejercicio_id: add_to_training(e, ejercicio_id))
                                 ],
                                 alignment=ft.MainAxisAlignment.END,
