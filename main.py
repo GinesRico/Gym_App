@@ -40,19 +40,25 @@ def main(page: ft.Page):
         if history:
             last_action = history.pop()
             last_action()
+        else:
+            show_home(page, current_username, history, show_navigation_bar, set_current_user)
 
     def nav_change(e):
         selected_index = e.control.selected_index
         if selected_index == 0:
+            page.appbar = None
             history.append(lambda: show_home(page, current_username, history, show_navigation_bar, set_current_user))
             show_home(page, current_username, history, show_navigation_bar, set_current_user)
         elif selected_index == 1:
+            page.appbar = None
             history.append(lambda: body_screen(page, current_user_id, current_username, history))
             body_screen(page, current_user_id, current_username, history)
         elif selected_index == 2:
+            page.appbar = None
             history.append(lambda: show_trainings(page, current_user_id, history))
             show_trainings(page, current_user_id, history)
         elif selected_index == 3:
+            page.appbar = None
             history.append(lambda: show_tmb_get_screen(page))
             show_tmb_get_screen(page)
         elif selected_index == 4:

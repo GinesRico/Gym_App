@@ -35,6 +35,26 @@ def initialize_database():
     )
     """)
 
+    # Crear tabla de ejercicios si no existe y agregar la columna secundaryMuscles si no existe
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS ejercicios (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        bodyPart TEXT,
+        equipment TEXT,
+        gifUrl TEXT,
+        target TEXT,
+        instructions TEXT,
+        secundaryMuscles TEXT
+    )
+    """)
+
+    # Verificar si la columna secundaryMuscles existe, si no, agregarla
+    cursor.execute("PRAGMA table_info(ejercicios)")
+    columns = [info[1] for info in cursor.fetchall()]
+    if "secundaryMuscles" not in columns:
+        cursor.execute("ALTER TABLE ejercicios ADD COLUMN secundaryMuscles TEXT")
+    
     conn.close()
 
 def get_connection():

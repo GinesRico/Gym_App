@@ -74,7 +74,7 @@ def show_exercises(page, body_part, history, current_user_id, current_username):
             training_dropdown = ft.Dropdown(
                 options=[],
                 label="Entrenamiento Existente",
-                width=100
+                width=300
             )
 
             conn = sqlite3.connect(bd_path)
@@ -119,13 +119,8 @@ def show_exercises(page, body_part, history, current_user_id, current_username):
                             ),
                             ft.Row(
                                 [
-                                    ft.TextButton("Instrucciones", on_click=lambda e, inst=instructions: open_dlg(inst)),
-                                    ft.IconButton(
-                                        icon=ft.icons.ADD,
-                                        icon_size=20,
-                                        tooltip="Añadir a entrenamiento",
-                                        on_click=lambda e, ejercicio_id=ejercicio_id: add_to_training(e, ejercicio_id)
-                                    )
+                                    ft.IconButton(icon=ft.icons.INFO, tooltip="Instrucciones", on_click=lambda e, inst=instructions: open_dlg(inst)),
+                                    ft.IconButton(icon=ft.icons.ADD, tooltip="Añadir a entrenamiento", on_click=lambda e, ejercicio_id=ejercicio_id: add_to_training(e, ejercicio_id))
                                 ],
                                 alignment=ft.MainAxisAlignment.END,
                             ),
