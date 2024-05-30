@@ -1,5 +1,5 @@
 import flet as ft
-from config import image_base_path, bd_path
+from config import image_base_path
 from database import initialize_database, get_connection
 from login_screen import show_login
 from home_screen import show_home

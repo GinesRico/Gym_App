@@ -1,61 +1,79 @@
-import sqlite3
-from config import bd_path
+import mysql.connector
+from mysql.connector import Error
 
 def initialize_database():
-    conn = sqlite3.connect(bd_path)
-    cursor = conn.cursor()
+    try:
+        conn = mysql.connector.connect(
+            host='192.168.31.238',
+            port=3306,
+            database='Gym_app',
+            user='User_Gym_app',
+            password='Pass_Gym_app'
+        )
 
-    # Crear tabla de usuarios si no existe
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS usuarios (
-        id INTEGER PRIMARY KEY AUTOINCREMENT, 
-        username TEXT UNIQUE, 
-        password TEXT
-    )
-    """)
+        if conn.is_connected():
+            cursor = conn.cursor()
 
-    # Crear tabla de entrenamientos si no existe
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS entrenamientos (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER,
-        nombre TEXT,
-        FOREIGN KEY (user_id) REFERENCES usuarios(id)
-    )
-    """)
+            # Crear tabla de usuarios si no existe
+            cursor.execute("""
+            CREATE TABLE IF NOT EXISTS usuarios (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                username VARCHAR(255) UNIQUE,
+                password VARCHAR(255)
+            )
+            """)
 
-    # Crear tabla de relacion entre entrenamientos y ejercicios
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS entrenamiento_ejercicios (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        entrenamiento_id INTEGER,
-        ejercicio_id INTEGER,
-        FOREIGN KEY (entrenamiento_id) REFERENCES entrenamientos(id),
-        FOREIGN KEY (ejercicio_id) REFERENCES ejercicios(id)
-    )
-    """)
+            # Crear tabla de ejercicios si no existe
+            cursor.execute("""
+            CREATE TABLE IF NOT EXISTS ejercicios (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(255),
+                bodyPart VARCHAR(255),
+                equipment VARCHAR(255),
+                gifUrl VARCHAR(255),
+                instructions TEXT,
+                secondaryMuscles TEXT
+            )
+            """)
 
-    # Crear tabla de ejercicios si no existe y agregar la columna secundaryMuscles si no existe
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS ejercicios (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT,
-        bodyPart TEXT,
-        equipment TEXT,
-        gifUrl TEXT,
-        target TEXT,
-        instructions TEXT,
-        secundaryMuscles TEXT
-    )
-    """)
+            # Crear tabla de entrenamientos si no existe
+            cursor.execute("""
+            CREATE TABLE IF NOT EXISTS entrenamientos (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT,
+                nombre VARCHAR(255),
+                FOREIGN KEY (user_id) REFERENCES usuarios(id)
+            )
+            """)
 
-    # Verificar si la columna secundaryMuscles existe, si no, agregarla
-    cursor.execute("PRAGMA table_info(ejercicios)")
-    columns = [info[1] for info in cursor.fetchall()]
-    if "secundaryMuscles" not in columns:
-        cursor.execute("ALTER TABLE ejercicios ADD COLUMN secundaryMuscles TEXT")
-    
-    conn.close()
+            # Crear tabla de entrenamiento_ejercicios si no existe
+            cursor.execute("""
+            CREATE TABLE IF NOT EXISTS entrenamiento_ejercicios (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                entrenamiento_id INT,
+                ejercicio_id INT,
+                FOREIGN KEY (entrenamiento_id) REFERENCES entrenamientos(id),
+                FOREIGN KEY (ejercicio_id) REFERENCES ejercicios(id)
+            )
+            """)
+
+            conn.commit()
+            cursor.close()
+            conn.close()
+
+    except Error as e:
+        print(f"Error connecting to MySQL: {e}")
 
 def get_connection():
-    return sqlite3.connect(bd_path)
+    try:
+        conn = mysql.connector.connect(
+            host='192.168.31.238',
+            port=3306,
+            database='Gym_app',
+            user='User_Gym_app',
+            password='Pass_Gym_app'
+        )
+        return conn
+    except Error as e:
+        print(f"Error connecting to MySQL: {e}")
+        return None

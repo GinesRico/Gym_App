@@ -19,3 +19,4 @@ def show_home(page, username, history, show_navigation_bar, set_current_user):
         logout_button
     )
     page.update()
+

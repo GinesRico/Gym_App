@@ -1,27 +1,30 @@
 import flet as ft
-import sqlite3
+import mysql.connector
+from mysql.connector import Error
 import os
-from config import image_base_path, bd_path
+from config import image_base_path
+from database import get_connection
 
 def show_exercises(page, body_part, history, current_user_id, current_username):
     def load_exercises(e, equipment_filter=None, target_filter=None):
         page.clean()
 
-        conn = sqlite3.connect(bd_path)
+        conn = get_connection()
         cursor = conn.cursor()
 
-        query = "SELECT id, name, gifUrl, instructions, secundaryMuscles FROM ejercicios WHERE bodyPart=?"
+        query = "SELECT id, name, gifUrl, instructions, secondaryMuscles FROM ejercicios WHERE bodyPart=%s"
         params = [body_part]
 
         if equipment_filter:
-            query += " AND equipment=?"
+            query += " AND equipment=%s"
             params.append(equipment_filter)
         if target_filter:
-            query += " AND target=?"
+            query += " AND target=%s"
             params.append(target_filter)
 
         cursor.execute(query, params)
         ejercicios = cursor.fetchall()
+        cursor.close()
         conn.close()
 
         ejercicio_card = ft.Column(spacing=10, expand=True, scroll=ft.ScrollMode.ALWAYS)
@@ -40,10 +43,10 @@ def show_exercises(page, body_part, history, current_user_id, current_username):
             dlg.open = False
             page.update()
 
-        def open_muscles_dlg(secundaryMuscles):
+        def open_muscles_dlg(secondaryMuscles):
             dlg = ft.AlertDialog(
                 title=ft.Text("Músculos Auxiliares"),
-                content=ft.Text(secundaryMuscles),
+                content=ft.Text(secondaryMuscles),
                 actions=[ft.TextButton("Cerrar", on_click=lambda _: close_dlg(dlg))]
             )
             page.dialog = dlg
@@ -54,10 +57,11 @@ def show_exercises(page, body_part, history, current_user_id, current_username):
             def save_to_existing_training(e):
                 selected_training = training_dropdown.value
                 if selected_training:
-                    conn = sqlite3.connect(bd_path)
+                    conn = get_connection()
                     cursor = conn.cursor()
-                    cursor.execute("INSERT INTO entrenamiento_ejercicios (entrenamiento_id, ejercicio_id) VALUES (?, ?)", (selected_training, ejercicio_id))
+                    cursor.execute("INSERT INTO entrenamiento_ejercicios (entrenamiento_id, ejercicio_id) VALUES (%s, %s)", (selected_training, ejercicio_id))
                     conn.commit()
+                    cursor.close()
                     conn.close()
                     page.snack_bar = ft.SnackBar(content=ft.Text(f"Ejercicio añadido al entrenamiento {selected_training}"))
                     page.snack_bar.open = True
@@ -67,30 +71,32 @@ def show_exercises(page, body_part, history, current_user_id, current_username):
             def create_new_training(e):
                 training_name = training_name_field.value
                 if training_name:
-                    conn = sqlite3.connect(bd_path)
+                    conn = get_connection()
                     cursor = conn.cursor()
-                    cursor.execute("INSERT INTO entrenamientos (user_id, nombre) VALUES (?, ?)", (current_user_id, training_name))
+                    cursor.execute("INSERT INTO entrenamientos (user_id, nombre) VALUES (%s, %s)", (current_user_id, training_name))
                     conn.commit()
                     training_id = cursor.lastrowid
-                    cursor.execute("INSERT INTO entrenamiento_ejercicios (entrenamiento_id, ejercicio_id) VALUES (?, ?)", (training_id, ejercicio_id))
+                    cursor.execute("INSERT INTO entrenamiento_ejercicios (entrenamiento_id, ejercicio_id) VALUES (%s, %s)", (training_id, ejercicio_id))
                     conn.commit()
+                    cursor.close()
                     conn.close()
                     page.snack_bar = ft.SnackBar(content=ft.Text(f"Nuevo entrenamiento {training_name} creado y ejercicio añadido"))
                     page.snack_bar.open = True
                     page.dialog.open = False
                     page.update()
 
-            training_name_field = ft.TextField(label="Nuevo", width= 150)
+            training_name_field = ft.TextField(label="Nuevo Entrenamiento")
             training_dropdown = ft.Dropdown(
                 options=[],
-                label="Existente",
-                width=150
+                label="Entrenamiento Existente",
+                width=300
             )
 
-            conn = sqlite3.connect(bd_path)
+            conn = get_connection()
             cursor = conn.cursor()
-            cursor.execute("SELECT id, nombre FROM entrenamientos WHERE user_id=?", (current_user_id,))
+            cursor.execute("SELECT id, nombre FROM entrenamientos WHERE user_id=%s", (current_user_id,))
             entrenamientos = cursor.fetchall()
+            cursor.close()
             conn.close()
 
             for entrenamiento in entrenamientos:
@@ -104,15 +110,11 @@ def show_exercises(page, body_part, history, current_user_id, current_username):
                         ft.Row(
                             [
                                 training_dropdown,
-                                ft.IconButton(icon=ft.icons.ADD, tooltip="Añadir",on_click=save_to_existing_training)
+                                ft.ElevatedButton(text="Añadir", on_click=save_to_existing_training)
                             ]
                         ),
-                        ft.Row(
-                            [
-                                training_name_field,
-                                ft.IconButton(icon=ft.icons.ADD, tooltip="Crear y Añadir",on_click=create_new_training)
-                            ]
-                        )                                                    
+                        training_name_field,
+                        ft.ElevatedButton(text="Crear y Añadir", on_click=create_new_training)
                     ],
                     spacing=10
                 )
@@ -121,7 +123,7 @@ def show_exercises(page, body_part, history, current_user_id, current_username):
             page.update()
 
         for ejercicio in ejercicios:
-            ejercicio_id, name, gifUrl, instructions, secundaryMuscles = ejercicio
+            ejercicio_id, name, gifUrl, instructions, secondaryMuscles = ejercicio
 
             card_content = ft.Card(
                 content=ft.Container(
@@ -134,7 +136,7 @@ def show_exercises(page, body_part, history, current_user_id, current_username):
                             ft.Row(
                                 [
                                     ft.IconButton(icon=ft.icons.INFO, tooltip="Instrucciones", on_click=lambda e, inst=instructions: open_dlg(inst)),
-                                    ft.IconButton(icon=ft.icons.FITNESS_CENTER, tooltip="Músculos Auxiliares", on_click=lambda e, muscles=secundaryMuscles: open_muscles_dlg(muscles)),
+                                    ft.IconButton(icon=ft.icons.FITNESS_CENTER, tooltip="Músculos Auxiliares", on_click=lambda e, muscles=secondaryMuscles: open_muscles_dlg(muscles)),
                                     ft.IconButton(icon=ft.icons.ADD, tooltip="Añadir a entrenamiento", on_click=lambda e, ejercicio_id=ejercicio_id: add_to_training(e, ejercicio_id))
                                 ],
                                 alignment=ft.MainAxisAlignment.END,
@@ -156,10 +158,11 @@ def body_screen(page, current_user_id, current_username, history):
     bp = ft.GridView(expand=True, max_extent=150, child_aspect_ratio=1)
     page.add(bp)
 
-    conn = sqlite3.connect(bd_path)
+    conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT DISTINCT bodyPart FROM ejercicios")
     body_parts = cursor.fetchall()
+    cursor.close()
     conn.close()
 
     for body_part in body_parts:
