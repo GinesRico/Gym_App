@@ -1,4 +1,5 @@
 import flet as ft
+from config import image_base_path
 
 def show_home(page, username, history, show_navigation_bar, set_current_user):
     def logout(e):
@@ -12,7 +13,7 @@ def show_home(page, username, history, show_navigation_bar, set_current_user):
     page.clean()
     logout_button = ft.ElevatedButton(text="Cerrar sesión", on_click=logout)
     page.add(
-        ft.Image(src="icon.png", height=400),
+        ft.Image(src=f"{image_base_path}icon.png", height=400),
         ft.Container(padding=20),
         ft.Text(f"Bienvenido, {username.capitalize()}!"),
         ft.Container(padding=20),

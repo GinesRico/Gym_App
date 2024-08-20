@@ -35,7 +35,7 @@ def show_exercises(page, body_part, history, current_user_id, current_username):
                 content=ft.Text(instructions),
                 actions=[ft.TextButton("Cerrar", on_click=lambda _: close_dlg(dlg))]
             )
-            page.dialog = dlg
+            page.overlay.append(dlg)  # Add the dialog to the overlay
             dlg.open = True
             page.update()
 
@@ -49,7 +49,7 @@ def show_exercises(page, body_part, history, current_user_id, current_username):
                 content=ft.Text(secondaryMuscles),
                 actions=[ft.TextButton("Cerrar", on_click=lambda _: close_dlg(dlg))]
             )
-            page.dialog = dlg
+            page.overlay.append(dlg)  # Add the dialog to the overlay
             dlg.open = True
             page.update()
 
@@ -63,9 +63,10 @@ def show_exercises(page, body_part, history, current_user_id, current_username):
                     conn.commit()
                     cursor.close()
                     conn.close()
-                    page.snack_bar = ft.SnackBar(content=ft.Text(f"Ejercicio añadido al entrenamiento {selected_training}"))
-                    page.snack_bar.open = True
-                    page.dialog.open = False
+                    snack_bar = ft.SnackBar(content=ft.Text(f"Ejercicio añadido al entrenamiento {selected_training}"))
+                    page.overlay.append(snack_bar)  # Add the snack bar to the overlay
+                    snack_bar.open = True
+                    dlg.open = False
                     page.update()
 
             def create_new_training(e):
@@ -80,9 +81,10 @@ def show_exercises(page, body_part, history, current_user_id, current_username):
                     conn.commit()
                     cursor.close()
                     conn.close()
-                    page.snack_bar = ft.SnackBar(content=ft.Text(f"Nuevo entrenamiento {training_name} creado y ejercicio añadido"))
-                    page.snack_bar.open = True
-                    page.dialog.open = False
+                    snack_bar = ft.SnackBar(content=ft.Text(f"Nuevo entrenamiento {training_name} creado y ejercicio añadido"))
+                    page.overlay.append(snack_bar)  # Add the snack bar to the overlay
+                    snack_bar.open = True
+                    dlg.open = False
                     page.update()
 
             training_name_field = ft.TextField(label="Nuevo Entrenamiento")
@@ -102,7 +104,7 @@ def show_exercises(page, body_part, history, current_user_id, current_username):
             for entrenamiento in entrenamientos:
                 training_dropdown.options.append(ft.dropdown.Option(entrenamiento[0], entrenamiento[1]))
 
-            page.dialog = ft.AlertDialog(
+            dlg = ft.AlertDialog(
                 title=ft.Text("Añadir a Entrenamiento"),
                 content=ft.Column(
                     [
@@ -119,7 +121,8 @@ def show_exercises(page, body_part, history, current_user_id, current_username):
                     spacing=10
                 )
             )
-            page.dialog.open = True
+            page.overlay.append(dlg)  # Add the dialog to the overlay
+            dlg.open = True
             page.update()
 
         for ejercicio in ejercicios:

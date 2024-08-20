@@ -13,8 +13,9 @@ def show_login(page, history, show_navigation_bar, show_home, set_current_user):
         password = password_field.value.strip()
 
         if not username or not password:
-            page.snack_bar = ft.SnackBar(content=ft.Text("Por favor, ingrese un usuario y una contraseña"))
-            page.snack_bar.open = True
+            snack_bar = ft.SnackBar(content=ft.Text("Por favor, ingrese un usuario y una contraseña"))
+            page.overlay.append(snack_bar)  # Add the snack bar to the overlay
+            snack_bar.open = True
             page.update()
             return
 
@@ -26,16 +27,17 @@ def show_login(page, history, show_navigation_bar, show_home, set_current_user):
         conn.close()
 
         if not user:
-            page.snack_bar = ft.SnackBar(content=ft.Text("Usuario no registrado"))
+            snack_bar = ft.SnackBar(content=ft.Text("Usuario no registrado"))
         elif user[1] != password:
-            page.snack_bar = ft.SnackBar(content=ft.Text("Contraseña incorrecta"))
+            snack_bar = ft.SnackBar(content=ft.Text("Contraseña incorrecta"))
         else:
             set_current_user(user[0], username)  # Establecer usuario actual
             show_navigation_bar()
             show_home(page, username, history, show_navigation_bar, set_current_user)
             return
 
-        page.snack_bar.open = True
+        page.overlay.append(snack_bar)  # Add the snack bar to the overlay
+        snack_bar.open = True
         page.update()
 
     def show_register(e=None):
@@ -50,8 +52,9 @@ def show_login(page, history, show_navigation_bar, show_home, set_current_user):
             password = password_field.value.strip()
 
             if not username or not password:
-                page.snack_bar = ft.SnackBar(content=ft.Text("El usuario y la contraseña no pueden estar vacíos"))
-                page.snack_bar.open = True
+                snack_bar = ft.SnackBar(content=ft.Text("El usuario y la contraseña no pueden estar vacíos"))
+                page.overlay.append(snack_bar)  # Add the snack bar to the overlay
+                snack_bar.open = True
                 page.update()
                 return
 
@@ -60,13 +63,14 @@ def show_login(page, history, show_navigation_bar, show_home, set_current_user):
             try:
                 cursor.execute("INSERT INTO usuarios (username, password) VALUES (%s, %s)", (username, password))
                 conn.commit()
-                page.snack_bar = ft.SnackBar(content=ft.Text("Usuario registrado con éxito"))
+                snack_bar = ft.SnackBar(content=ft.Text("Usuario registrado con éxito"))
+                page.overlay.append(snack_bar)  # Add the snack bar to the overlay
                 show_login(page, history, show_navigation_bar, show_home, set_current_user)
             except mysql.connector.Error as err:
-                page.snack_bar = ft.SnackBar(content=ft.Text("El nombre de usuario ya existe"))
+                snack_bar = ft.SnackBar(content=ft.Text("El nombre de usuario ya existe"))
             cursor.close()
             conn.close()
-            page.snack_bar.open = True
+            snack_bar.open = True
             page.update()
 
         username_field = ft.TextField(label="Username")

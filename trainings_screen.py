@@ -3,7 +3,7 @@ from database import get_connection
 
 def show_trainings(page, current_user_id, history):
     page.clean()
-    page.appbar = None  # Asegúrate de que no haya un AppBar residual
+    page.appbar = None  # Ensure there is no residual AppBar
 
     conn = get_connection()
     cursor = conn.cursor()
@@ -22,8 +22,9 @@ def show_trainings(page, current_user_id, history):
         conn.commit()
         cursor.close()
         conn.close()
-        page.snack_bar = ft.SnackBar(content=ft.Text("Entrenamiento eliminado"))
-        page.snack_bar.open = True
+        snack_bar = ft.SnackBar(content=ft.Text("Entrenamiento eliminado"))
+        page.overlay.append(snack_bar)  # Add the snack bar to the overlay
+        snack_bar.open = True
         show_trainings(page, current_user_id, history)
 
     for training in entrenamientos:
@@ -60,7 +61,7 @@ def show_trainings(page, current_user_id, history):
                         content=ft.Text(instructions),
                         actions=[ft.TextButton("Cerrar", on_click=lambda _: close_dlg(dlg))]
                     )
-                    page.dialog = dlg
+                    page.overlay.append(dlg)  # Add the dialog to the overlay
                     dlg.open = True
                     page.update()
 
@@ -70,7 +71,7 @@ def show_trainings(page, current_user_id, history):
                         content=ft.Text(secondaryMuscles),
                         actions=[ft.TextButton("Cerrar", on_click=lambda _: close_dlg(dlg))]
                     )
-                    page.dialog = dlg
+                    page.overlay.append(dlg)  # Add the dialog to the overlay
                     dlg.open = True
                     page.update()
 
@@ -85,8 +86,9 @@ def show_trainings(page, current_user_id, history):
                     conn.commit()
                     cursor.close()
                     conn.close()
-                    page.snack_bar = ft.SnackBar(content=ft.Text(f"Ejercicio eliminado del entrenamiento"))
-                    page.snack_bar.open = True
+                    snack_bar = ft.SnackBar(content=ft.Text(f"Ejercicio eliminado del entrenamiento"))
+                    page.overlay.append(snack_bar)  # Add the snack bar to the overlay
+                    snack_bar.open = True
                     show_exercises(e, training_id, training_name)
                     page.update()
 

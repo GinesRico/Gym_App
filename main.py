@@ -27,11 +27,11 @@ def main(page: ft.Page):
             active_color=ft.colors.BLACK,
             on_change=nav_change,
             destinations=[
-                ft.NavigationDestination(icon=ft.icons.EXPLORE, label="Inicio"),
-                ft.NavigationDestination(icon=ft.icons.SPORTS_GYMNASTICS_ROUNDED, label="Ejercicios"),
-                ft.NavigationDestination(icon=ft.icons.STAR, label="Entrenamientos"),  # Actualizar el nombre del botón
-                ft.NavigationDestination(icon=ft.icons.CALCULATE, label="TMB & GET"),  # Añadir nuevo botón
-                ft.NavigationDestination(icon=ft.icons.ARROW_BACK, label="Atrás")
+                ft.NavigationBarDestination(icon=ft.icons.EXPLORE, label="Inicio"),
+                ft.NavigationBarDestination(icon=ft.icons.SPORTS_GYMNASTICS_ROUNDED, label="Ejercicios"),
+                ft.NavigationBarDestination(icon=ft.icons.STAR, label="Entrenamientos"),  # Actualizar el nombre del botón
+                ft.NavigationBarDestination(icon=ft.icons.CALCULATE, label="TMB & GET"),  # Añadir nuevo botón
+                ft.NavigationBarDestination(icon=ft.icons.ARROW_BACK, label="Atrás")
             ]
         )
         page.update()
